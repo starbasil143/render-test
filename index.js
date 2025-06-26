@@ -1,5 +1,8 @@
+require('dotenv').config();
 const express = require('express');
 const morgan = require('morgan');
+
+const Person = require('./models/person')
 
 const app = express();
 
@@ -37,11 +40,17 @@ app.get('/sine', (request,response)=>{
 })
 
 app.get('/api/persons', (request,response)=>{
-  response.json(data);
+  Person.find({}).then(people => {
+    response.json(people);
+  })
 })
 
 app.post('/api/persons', (request, response)=>{
   const personData = request.body;
+
+  if (!personData) {
+    return response.status(400).json({error: 'content missing'});
+  }
   
   if (data.some(p=>p.name===personData.name)) {
     response.json({ error: 'Name is already in use.' });
@@ -51,48 +60,44 @@ app.post('/api/persons', (request, response)=>{
     response.status(400).end();
   } else
   {
-    const newPerson = {
-      name: request.body.name,
-      number: request.body.number,
-    }
+    const newPerson = new Person({
+      name: personData.name,
+      number: personData.number,
+    });
     
     do {
       newPerson.id = Math.floor(Math.random()*143143143)
     } while (data.some(p=>p.id===newPerson.id)) 
-      
-      data = data.concat(newPerson);
-      response.json(newPerson);
-    }
-  })
+
+    newPerson.save().then(savedPerson => {
+      response.json(savedPerson)
+    })
+  }
+})
   
-  app.get('/api/persons/:id', (request,response)=>{
-    const id = request.params.id;
-    
-    const person = data.find(x=>x.id===id)
-    
-    if (person){
+app.get('/api/persons/:id', (request,response)=>{
+  Person.findById(request.params.id)
+    .then(person => {
       response.json(person);
-    } else {
-      response.status(404).end();
-    }
+    })
+})
+  
+app.delete('/api/persons/:id', (request, response)=>{
+  const id = request.params.id;
+  
+  data = data.filter(p=>p.id!==id);
+  response.status(204).end;
+})
+
+app.get('/info', (request,response)=>{
+  response.send(`
+    <p>Phonebook has info for ${data.length} people</p>
+    <p>${Date()}</p>
+    `);
   })
   
-  app.delete('/api/persons/:id', (request, response)=>{
-    const id = request.params.id;
-    
-    data = data.filter(p=>p.id!==id);
-    response.status(204).end;
-  })
   
-  app.get('/info', (request,response)=>{
-    response.send(`
-      <p>Phonebook has info for ${data.length} people</p>
-      <p>${Date()}</p>
-      `);
-    })
-    
-    
-    const PORT = process.env.PORT || 3001
-    app.listen(PORT, ()=>{
-      console.log(`Server running on port ${PORT}`);
-    })
+const PORT = process.env.PORT;
+app.listen(PORT, ()=>{
+  console.log(`Server running on port ${PORT}`);
+})
