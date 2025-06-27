@@ -12,29 +12,6 @@ app.use(express.json());
 app.use(express.static('dist'));
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'));
 
-let data = [
-  { 
-    "id": "1",
-    "name": "Arto Hellas", 
-    "number": "040-123456"
-  },
-  { 
-    "id": "2",
-    "name": "Ada Lovelace", 
-    "number": "39-44-5323523"
-  },
-  { 
-    "id": "3",
-    "name": "Dan Abramov", 
-    "number": "12-43-234345"
-  },
-  { 
-    "id": "4",
-    "name": "Mary Poppendieck", 
-    "number": "39-23-6423122"
-  }
-]
-
 app.get('/sine', (request,response)=>{
   response.send('<h1>Cosine.</h1>');
 })
@@ -51,28 +28,15 @@ app.post('/api/persons', (request, response)=>{
   if (!personData) {
     return response.status(400).json({error: 'content missing'});
   }
-  
-  if (data.some(p=>p.name===personData.name)) {
-    response.json({ error: 'Name is already in use.' });
-    response.status(400).end();
-  } else if (!personData.name || !personData.number) {
-    response.json({ error: "Request must include fields 'name' and 'number'" });
-    response.status(400).end();
-  } else
-  {
-    const newPerson = new Person({
-      name: personData.name,
-      number: personData.number,
-    });
-    
-    do {
-      newPerson.id = Math.floor(Math.random()*143143143)
-    } while (data.some(p=>p.id===newPerson.id)) 
+  const newPerson = new Person({
+    name: personData.name,
+    number: personData.number,
+  });
 
-    newPerson.save().then(savedPerson => {
-      response.json(savedPerson)
-    })
-  }
+  newPerson.save().then(savedPerson => {
+    response.json(savedPerson)
+  })
+  
 })
 
 app.put('/api/persons/:id', (request, response, next) => {
@@ -116,10 +80,12 @@ app.delete('/api/persons/:id', (request, response, next)=>{
 })
 
 app.get('/info', (request,response)=>{
-  response.send(`
-    <p>Phonebook has info for ${data.length} people</p>
-    <p>${Date()}</p>
-    `);
+  Person.countDocuments({}).then(count =>{
+      response.send(`
+        <p>Phonebook has info for ${count} people</p>
+        <p>${Date()}</p>
+        `);
+      })
   })
 
 const errorHandler = (error, request, response, next) => {
