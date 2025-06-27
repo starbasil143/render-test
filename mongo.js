@@ -12,34 +12,34 @@ const url = `mongodb+srv://basil:${password}@cluster0.ebz6bgg.mongodb.net/phoneb
 
 mongoose.set('strictQuery', false);
 
-mongoose.connect(url)
+mongoose.connect(url);
 
 const personSchema = new mongoose.Schema({
   name: String,
   number: String,
-})
+});
 const Person = mongoose.model('Person', personSchema);
 
 
 if (process.argv.length === 3) {
   Person.find({}).then( result => {
-    console.log('Phonebook\n--------')
+    console.log('Phonebook\n--------');
     result.forEach(person => {
       console.log(`${person.name}: ${person.number}`);
-    })
+    });
     mongoose.connection.close();
-  })
+  });
 } else if (process.argv.length === 5) {
-  
+
   const bobby = new Person({
     name: process.argv[3],
     number: process.argv[4],
   });
-  
-  bobby.save().then(result => {
+
+  bobby.save().then(() => {
     console.log('Person saved.');
     mongoose.connection.close();
-  })
+  });
 } else {
-  console.log('Usage: node mongo.js <password> <name> <number>. Omit name and number to view data.')
+  console.log('Usage: node mongo.js <password> <name> <number>. Omit name and number to view data.');
 }
